@@ -1,5 +1,7 @@
 ---
 title: "sensitivity_LHS"
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -51,7 +53,7 @@ colnames(parm) <- pnames
 # in reality I should pick distribution from knowledge about uncertainty in parameters
 
 # to make it easy to change i'm setting standard deviation / range variation to a variable
-pvar <- 10
+pvar <- 10 #10% of the mean
 
 parm[, "Tmincoeff1"] <- qnorm(parm_quant[, "Tmincoeff1"], mean = -0.015, sd = 0.015 / pvar)
 parm[, "Tmincoeff2"] <- qnorm(parm_quant[, "Tmincoeff2"], mean = -0.0046, sd = 0.0046 / pvar)
@@ -66,7 +68,8 @@ parm[, "intercep"] <- qnorm(parm_quant[, "intercep"], mean = 0.28, sd = 0.28 / p
 
 head(parm)
 ```
-
+**Notes**
+- qnorm uses quantiles from LHC (parm_quant)
 
 # Run model for parameter sets
 
@@ -117,7 +120,9 @@ to graphically show the impact of uncertainty on output of interest
 
 ```{r senplot}
 # add uncertainty bounds on our estimates
-tmp <- yieldsd %>% gather(value = "value", key = "yield")
+tmp <- yieldsd %>% 
+  gather(value = "value", key = "yield")
+
 ggplot(tmp, aes(yield, value, col = yield)) +
   geom_boxplot() +
   labs(y = "Yield (as anomoly)")
@@ -133,22 +138,31 @@ ggplot(tmp, aes(yield, value, col = yield)) +
 ggplot(yieldsd, aes(maxyield)) +
   stat_ecdf()
 
+# i.e. 50% of the values (or less) are ~0.11
 
 # plot parameter sensitivity
 # a bit tricky but nice way to make it easy to plot all parameters against all values
 tmp <- cbind.data.frame(yieldsd, parm)
-tmp2 <- tmp %>% gather(maxyield, minyield, meanyield, value = "yvalue", key = "yieldtype")
-tmp3 <- tmp2 %>% gather(-yvalue, -yieldtype, key = "parm", value = "parmvalue")
+
+tmp2 <- tmp %>% 
+  gather(maxyield, minyield, meanyield, value = "yvalue", key = "yieldtype")
+
+tmp3 <- tmp2 %>% 
+  gather(-yvalue, -yieldtype, key = "parm", value = "parmvalue")
+
 ggplot(tmp3, aes(parmvalue, yvalue, col = yieldtype)) +
   geom_point() +
   facet_wrap(~ yieldtype * parm, scales = "free", ncol = 5)
 ```
 
+**Notes**
+- meanyield and minyield are sensitive to `Pcoeff2`, maxyield is sensitive to `intercep`
+- doesn't mean other parameters don't have sensitivity (but dominated by particular parameter)
+
 Quantifying
 
 # Correlation and Pcc for Maximum Yield
 ```{r quantifying}
-
 
 # simple correlation coefficients
 result <- map(parm, cor.test, y = yieldsd$maxyield)
@@ -168,6 +182,9 @@ justconf <- result %>% map_df("conf.int")
 justconf
 ```
 
+**Notes**
+- biggest correlation with `intercep` (result$intercep)
+
 ## Parital Rank Correlation Coefficients for Maximum Yield
 
 we can use *pcc* to compute these for us
@@ -182,6 +199,9 @@ senresult_rank
 # plot results
 plot(senresult_rank)
 ```
+
+**Notes**
+- more effectively accounts for correlation in other parameters (that the graphs didn't show)
 
 ## try computing for min yield, and mean yields
 
