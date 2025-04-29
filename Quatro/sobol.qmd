@@ -83,6 +83,9 @@ Notes:
 - Sobel decided on how many parameter sets to run (in this case 6,000)
 
 
+# Take a look at the Sobol generated sensitivity object
+# your parameters sets for sensitivity analysis are in X
+
 # Sobol Indices
 
 now run model for Sobol generated parameter sets and compute indices
@@ -108,6 +111,12 @@ res <- pmap_dbl(parms, Catm) # pmap parameters to the function (run model)
 # quanitify Sobol indices
 # tell needs Sobel object (sens_Catm_Sobol) and results (res)
 sens_Catm_Sobol <- sensitivity::tell(sens_Catm_Sobol, res, res.names = "ga") 
+parms <- as.data.frame(sens_Catm_Sobol$X)
+colnames(parms) <- colnames(X1)
+res <- pmap_dbl(parms, Catm)
+
+
+sens_Catm_Sobol <- sensitivity::tell(sens_Catm_Sobol, res, res.names = "ga")
 
 # main effect:  partitions variance (main effect without co-variance) - sums approximately to one
 sens_Catm_Sobol$S
@@ -128,7 +137,7 @@ Notes:
 - slight difference in main and total effect
 - i.e. effect of k_0 is more(?) when accounting for interaction with other parameters (if there is a higher value in T than S)
 - k_d strongest plot (responsible for most variation)
-
+ 
 # Plotting
 
 * uncertainty in the output
@@ -150,12 +159,7 @@ ggplot(both, aes(x = gs)) +
 ggplot(both, aes(v, gs, col = height)) +
   geom_point() +
   labs(y = "Conductance (mm/s)", x = "Windspeed") # conductance as a function of windspeed (height isnt making much diff i.e. color)
-
-
-# look at response of conductance to the two most important variables
-ggplot(both, aes(k_d, gs, col = k_o)) +
-  geom_point() +
-  labs(y = "Conductance (mm/s)", x = "k_d parameter") # most important parameter, can see relationship (color second most important parameter: k_o)
+  labs(y = "Conductance (mm/s)", x = "Windspeed")
 
 # use second most sensitive parameter (using most important as color)
 ggplot(both, aes(k_o, gs, col = k_d)) +
@@ -165,7 +169,6 @@ ggplot(both, aes(k_o, gs, col = k_d)) +
 
 Notes
 - most important parameter (k_d) on x axis, color by second most important parameter (k_o) to see relationship
- 
 
 # Second order indices
 
@@ -177,6 +180,7 @@ There are multiple implementation of Sobol in the *senstivity* package, they can
 I find *sobolSalt* works well
 
 ```{r, alternative}
+
 sens_Catm_Sobol2 <- sobolSalt(model = NULL, X1, X2, nboot = 100, scheme = "B") # to get second order parameters
 
 parms <- as.data.frame(sens_Catm_Sobol2$X)
@@ -195,10 +199,10 @@ row.names(sens_Catm_Sobol2$T) <- colnames(parms)
 sens_Catm_Sobol2$T
 
 # second order parameters interaction in controlling sensitivity
+
 # parameters are in order, interactions are small here
 sens_Catm_Sobol2$S2
 ```
 
 Notes:
 - only significant parameter interaction is X1X2 (k_0, k_d) because above 0/largest
-
