@@ -1,5 +1,7 @@
 ---
 title: "simpledynamic"
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -161,6 +163,20 @@ ggplot(tmp, aes(time, P, col = Ptype)) +
 # change the value of r, K , P0 - see how it effects the results
 ```
 
+Notes:
+- not exactly the same graph 
+- analytically solution is better (more-correct; don't have to iterate)
+  - differential equation change in time is infinitely small
+- discrete have to iterate to get to a point in time
+  - plus some time step (not infinitely small)
+- time increment will affect how quickly updated
+
+
+Ways to minimize rounding error:
+- solvers: integrate by iteration
+  - i.e. ODE (ordinary differential equations)
+  - only works with single independent variable like time (/dt)
+  - space AND time is different
 
 # ODE example
 ```{r usingode}
@@ -191,3 +207,4 @@ ggplot(as.data.frame(Ptime), aes(year, P)) +
   geom_point() +
   labs(y = "Population", "years")
 ```
+
