@@ -206,3 +206,32 @@ plot(senresult_rank)
 ## try computing for min yield, and mean yields
 
 think about why PRCC are different for different output
+
+min yield:
+
+```{r}
+# simple correlation coefficients
+result <- map(parm, cor.test, y = yieldsd$minyield)
+result$Tmincoeff1
+result$Tmincoeff2
+result$Pcoeff10
+result$Pcoeff2
+result$intercep
+
+# extract just the correlation from results list
+justR2 <- result %>% map_df("estimate")
+justR2$pname = names(parm)
+justR2
+
+# extract just the confidence interval from results list
+justconf <- result %>% map_df("conf.int")
+justconf
+
+# partial regression rank coefficients
+senresult_rank <- pcc(parm, yieldsd$minyield, rank = TRUE)
+senresult_rank
+
+# plot results
+plot(senresult_rank)
+```
+
