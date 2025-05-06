@@ -50,4 +50,34 @@ filled.contour(res$qin, xlab = "Time", ylab = "Distance")
 ```
 
 # 1. Play with time step, space step and parameters
+
+# Change parameters (diffusivity D, and space and time steps (dx, dt))
+
+```{r}
+# changes diffusivity and other parameters particularly
+# diffusivity, dx and dt
+res <- diff1(initialC = 10, nx = 10, dx = 1, nt = 10, dt = 1, D = 1, area = 1)
+
+filled.contour(res$conc, xlab = "Time", ylab = "Distance")
+
+
+# we can also see how much material moved from place to place each time step
+filled.contour(res$qin, xlab = "Time", ylab = "Distance")
+
+
+# play with time step, space step and parameters
+```
+
 # 2. Design different ways to summarize and visualize output 
+
+```{r}
+summary <- function(res) {
+  
+  # Find max concentration
+  max(res$conc)
+  
+}
+    
+summary(res)
+```
+
