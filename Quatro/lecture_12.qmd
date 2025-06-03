@@ -1,0 +1,122 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+```{r}
+library(sensitivity)
+library(here)
+library(tidyverse)
+library(deSolve)
+library(purrr)
+library(ggpubr)
+```
+
+```{r}
+source(here("R/lotvmodK.R"))
+
+lotvmodK
+```
+
+## Sobol
+
+- start by generating parameters
+
+```{r}
+# Specify number of samples
+np <- 200
+
+# Generate params
+K <- rnorm(mean = 150, sd = 20, n = np)
+rprey <- runif(min = 0.01, max = 0.3, n = np)
+alpha <- runif(min = 0.1, max = 0.4, n = np)
+eff <- rnorm(mean = 0.3, sd = 0.01, n = np)
+pmort <- runif(min = 0.01, max = 0.45, n = np)
+X1 <- cbind.data.frame(rprey = rprey, K=K, alpha = alpha, eff = eff, pmort = pmort)
+
+# View
+head(X1)
+
+# Rerun to generate second set of params
+K <- rnorm(mean = 150, sd = 20, n = np)
+rprey <- runif(min = 0.01, max = 0.3, n = np)
+alpha <- runif(min = 0.1, max = 0.4, n = np)
+eff <- rnorm(mean = 0.3, sd = 0.01, n = np)
+pmort <- runif(min = 0.01, max = 0.45, n = np)
+X2 <- cbind.data.frame(rprey = rprey, K=K, alpha = alpha, eff = eff, pmort = pmort)
+
+# View
+head(X2)
+```
+
+```{r}
+sen_PP <- sobolSalt(model = NULL, X1, X2, nboot = 300)
+
+str(sen_PP)
+
+head(sen_PP$X)
+
+colnames(sen_PP$X) <- c("rprey", "K", "alpha", "eff", "pmort")
+```
+
+Compute metrics function
+
+```{r}
+compute_metrics <- function(result) {
+  
+  maxprey <- max(result$prey)
+  minprey <- min(result$prey)
+  maxpred <- max(result$pred)
+  minpred <- min(result$pred)
+  return(list(maxpred = maxpred, minprey = minprey, maxprey = maxprey, minpred = minpred))
+  
+}
+```
+
+Wrapper function
+
+```{r}
+p_wrapper <- function(rprey, alpha, eff, pmort, K, currpop, days, func) {
+  
+  parms <- list(rprey = rprey, alpha = alpha, eff = eff, pmort = pmort, K = K)
+  result <- ode(y = currpop, times = days, func = func, parms = parms)
+  colnames(result) <- c("time", "pred", "prey")
+  metrics <- compute_metrics(as.data.frame(result))
+  return(metrics)
+  
+}
+```
+
+Run sensitivity analysis
+
+```{r}
+# initial conditions
+currpop <- c(prey = 1, pred = 1)
+days <- seq(from = 1, to = 500)
+
+# results from sobolsalt
+allresults <- as.data.frame(sen_PP$X) %>% pmap(p_wrapper, currpop = currpop, days = days, func = lotvmodK)
+
+# who knows!!!
+allres <- allresults %>% map_dfr(`[`, c("maxprey", "minprey", "maxpred", "minpred"))
+```
+
+```{r}
+#?!?
+allresl <- allres %>% gather(key = "metric", value = "pop")
+ggplot(allresl, aes(metric, pop)) +
+  geom_boxplot()
+
+ggplot(allresl, aes(metric, pop)) +
+  geom_boxplot() +
+  facet_wrap(~metric, scale = "free")
+
+sen_PP_maxprey <- sen_PP %>% sensitivity::tell(y = allres$maxprey)
+
+sen_PP_maxprey$S
+
+rownames(sen_PP_maxprey$S) <- c("rprey", "K", "alpha", "eff", "pmort")
+```
+
+
+
