@@ -1,6 +1,6 @@
 ---
 title: "Calibration Pt1"
-author: "Carmen Hoyt"
+author: "Carmen Hoyt and Rachel Swick"
 format: html
 editor: visual
 embed-resources: true
@@ -53,5 +53,5 @@ ggplot(subset(msagel_mth,  month==8 & accept),
   geom_point(aes(wy, obs), col="red")+labs(y="Streamflow", x="Date")
 
 best_par2 = which.max(results$high_month_cor)
-best_par2
+print(paste0("The best parameters are in row ", best_par2, "."))
 ```
